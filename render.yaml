@@ -1,6 +1,7 @@
 services:
   - type: web
     name: eventflow
+        plan: free
     env: node
     buildCommand: "cd client && npm install && npm run build && cd ../server && npm install"
     startCommand: "cd server && npm start"
