@@ -1,0 +1,30 @@
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+# Event flow 
+# On branch main
+# 
+# Initial commit
+#
+# Changes to be committed:
+#	new file:   README.md
+#	new file:   client/index.html
+#	new file:   client/package.json
+#	new file:   client/postcss.config.js
+#	new file:   client/src/App.jsx
+#	new file:   client/src/components/layout/Navbar.jsx
+#	new file:   client/src/components/ui/Button.jsx
+#	new file:   client/src/components/ui/GlassCard.jsx
+#	new file:   client/src/index.css
+#	new file:   client/src/main.jsx
+#	new file:   client/src/pages/Alerts.jsx
+#	new file:   client/src/pages/Auth.jsx
+#	new file:   client/src/pages/Dashboard.jsx
+#	new file:   client/src/pages/Map.jsx
+#	new file:   client/src/pages/Profile.jsx
+#	new file:   client/src/pages/Settings.jsx
+#	new file:   client/tailwind.config.js
+#	new file:   client/vite.config.js
+#	new file:   server/package.json
+#	new file:   server/server.js
+#
