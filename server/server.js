@@ -465,13 +465,15 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
-const server = app.listen(PORT, () => {
-  console.log(`Backend Server successfully running on http://localhost:${PORT}`);
-}).on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} is in use. Try killing the old node process or change the port.`);
-    process.exit(1);
-  }
-});
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Backend Server successfully running on http://localhost:${PORT}`);
+  }).on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`Port ${PORT} is in use. Try killing the old node process or change the port.`);
+      process.exit(1);
+    }
+  });
+}
 
 module.exports = app;
