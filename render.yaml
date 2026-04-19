@@ -2,10 +2,11 @@ services:
   - type: web
     name: eventflow
     env: node
-    buildCommand: "cd client && npm install && npm run build && cd ../server && npm install"
-    startCommand: "cd server && npm start"
+    plan: free
+    buildCommand: "npm install --prefix server && npm install --prefix client && npm run build --prefix client"
+    startCommand: "node server/server.js"
     envVars:
-      - key: NODE_VERSION
-        value: "20.x"
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: "10000"

@@ -22,7 +22,7 @@ let db;
 async function initDb() {
   try {
     console.log('Connecting to database...');
-    const dbPath = process.env.VERCEL ? path.join('/tmp', 'database.sqlite') : path.join(__dirname, 'database.sqlite');
+    const dbPath = path.join(__dirname, 'database.sqlite');
     db = await open({
       filename: dbPath,
       driver: sqlite3.Database
@@ -157,12 +157,13 @@ async function initDb() {
   }
 }
 
-initDb().catch(err => {
-  console.error('Failed to initialize database', err);
-});
+// start() function defined at the end of the file
 
 // --- API ROUTER ---
 const apiRouter = express.Router();
+
+// Health Check
+apiRouter.get('/health', (req, res) => res.json({ status: 'ok', uptime: process.uptime() }));
 
 // --- AUTH API ---
 apiRouter.post('/auth/register', async (req, res) => {
@@ -454,15 +455,24 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-  app.listen(PORT, () => {
-    console.log(`Backend Server successfully running on http://localhost:${PORT}`);
-  }).on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-      console.error(`Port ${PORT} is in use. Try killing the old node process or change the port.`);
-      process.exit(1);
-    }
-  });
-}
+// Initialize and Start
+const start = async () => {
+  try {
+    await initDb();
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Backend Server successfully running on port ${PORT}`);
+    }).on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is in use.`);
+        process.exit(1);
+      }
+    });
+  } catch (err) {
+    console.error('FAILED TO START SERVER:', err);
+    process.exit(1);
+  }
+};
+
+start();
 
 module.exports = app;
