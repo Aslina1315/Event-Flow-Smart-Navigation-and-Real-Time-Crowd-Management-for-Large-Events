@@ -22,8 +22,9 @@ let db;
 async function initDb() {
   try {
     console.log('Connecting to database...');
+    const dbPath = process.env.VERCEL ? path.join('/tmp', 'database.sqlite') : path.join(__dirname, 'database.sqlite');
     db = await open({
-      filename: path.join(__dirname, 'database.sqlite'),
+      filename: dbPath,
       driver: sqlite3.Database
     });
 
