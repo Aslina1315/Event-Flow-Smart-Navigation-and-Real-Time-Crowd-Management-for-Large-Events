@@ -31,6 +31,26 @@ npm install
 npm run dev
 ```
 
+### 🌍 Deployment Options
+
+#### 1. Vercel (Full-Stack)
+The project is configured with `vercel.json` for one-click deployment.
+- Connect your GitHub repository to Vercel.
+- Vercel will automatically detect the configuration and deploy the Express backend as a Serverless Function and the Vite frontend as a static site.
+- **Note**: SQLite is ephemeral on Vercel. The database will reset on deployments, but will auto-seed with fresh data.
+
+#### 2. GitHub Pages (Frontend Only)
+A GitHub Action is included in `.github/workflows/deploy.yml`.
+- Go to your repository **Settings > Pages**.
+- Set **Build and deployment > Source** to `GitHub Actions`.
+- Push to `main` to trigger the deployment.
+- **Note**: You will need to host the backend separately (e.g., on Render or Vercel) and update the API URL if not using a unified proxy.
+
+#### 3. Render (Full-Stack)
+Use the included `render.yaml` for a persistent full-stack deployment.
+- Connect to Render and select "Blueprint".
+- It will create a Web Service with persistent storage for the SQLite database.
+
 ## 🔐 Security
 - **Biometric Ready**: Auth flows designed for modern identity providers.
 - **Encrypted Session**: SHA-256 protected access keys.
