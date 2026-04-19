@@ -161,8 +161,11 @@ initDb().catch(err => {
   console.error('Failed to initialize database', err);
 });
 
+// --- API ROUTER ---
+const apiRouter = express.Router();
+
 // --- AUTH API ---
-app.post('/api/auth/register', async (req, res) => {
+apiRouter.post('/auth/register', async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) return res.status(400).json({ error: 'All fields required' });
   
@@ -177,7 +180,7 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+apiRouter.post('/auth/login', async (req, res) => {
   const { email, password } = req.body;
   const hash = crypto.createHash('sha256').update(password).digest('hex');
   
@@ -191,19 +194,10 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// --- ZONES API ---
-// Unified zones API below
-
-// --- AI CHAT API ---
-// Redundant /api/chat removed. Using unified implementation below.
-
 // --- EVENT DISCOVERY HUB (Real-World Data Integration) ---
-app.get('/api/discover', async (req, res) => {
+apiRouter.get('/discover', async (req, res) => {
   const { city } = req.query;
-  // Make city optional for global discovery
   const TM_API_KEY = process.env.TICKETMASTER_API_KEY || 'RQirjGj2h50kPZ4N94P3uX323Z1M3H6C';
-  
-  console.log(`Discovery: Fetching ${city ? `events for ${city}` : 'global trending events'} via Ticketmaster...`);
   
   try {
     const params = {
@@ -233,7 +227,6 @@ app.get('/api/discover', async (req, res) => {
         lng: parseFloat(event._embedded?.venues?.[0]?.location?.longitude) || 0
       }));
     } else {
-      console.log(`No results for ${city || 'Global'}. Falling back to Smart Simulation...`);
       const genres = ['Music Festival', 'Sports', 'Arts & Culture', 'Conferences & Summits'];
       const targetCity = city || 'International';
       
@@ -261,13 +254,12 @@ app.get('/api/discover', async (req, res) => {
     }
     res.json(publicEvents);
   } catch (err) {
-    console.error(`Discovery Error:`, err.message);
     res.status(500).json({ error: 'Global discovery hub is temporarily unavailable.' });
   }
 });
 
 // --- ALERTS API ---
-app.get('/api/alerts', async (req, res) => {
+apiRouter.get('/alerts', async (req, res) => {
   try {
     const alerts = await db.all('SELECT * FROM alerts ORDER BY timestamp DESC');
     res.json(alerts);
@@ -276,8 +268,20 @@ app.get('/api/alerts', async (req, res) => {
   }
 });
 
+apiRouter.post('/alerts', async (req, res) => {
+  const { title, message, type, location } = req.body;
+  if (!title || !message || !type || !location) return res.status(400).json({ error: 'Missing fields' });
+  try {
+    const result = await db.run('INSERT INTO alerts (title, message, type, location) VALUES (?, ?, ?, ?)', [title, message, type, location]);
+    const newAlert = await db.get('SELECT * FROM alerts WHERE id = ?', result.lastID);
+    res.status(201).json(newAlert);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- ZONES API ---
-app.get('/api/zones', async (req, res) => {
+apiRouter.get('/zones', async (req, res) => {
   try {
     const zones = await db.all('SELECT * FROM zones');
     res.json(zones);
@@ -286,10 +290,9 @@ app.get('/api/zones', async (req, res) => {
   }
 });
 
-// --- CHAT API (AI CONCIERGE - Universal Keyless Intelligence) ---
-app.post('/api/chat', async (req, res) => {
+// --- CHAT API (AI CONCIERGE) ---
+apiRouter.post('/chat', async (req, res) => {
   const { message } = req.body;
-  console.log(`CHAT REQUEST: "${message}"`);
   const msgLower = message ? message.toLowerCase() : "";
   
   try {
@@ -300,12 +303,10 @@ app.post('/api/chat', async (req, res) => {
 
     let reply = "";
 
-    // 1. Check for Event-Specific Context
     if (msgLower.includes('event') || msgLower.includes('happen') || msgLower.includes('show')) {
       const titles = events.map(e => `**${e.title}** (${e.location})`).join(', ');
       reply = `Based on my real-time schedule, we have some incredible experiences coming up, including ${titles}. Would you like me to help you book a ticket for any of these?`;
     } 
-    // 2. Check for Crowd/Safety Context
     else if (msgLower.includes('crowd') || msgLower.includes('density') || msgLower.includes('safe') || msgLower.includes('busy')) {
       const highZones = zones.filter(z => z.density > 70);
       if (highZones.length > 0) {
@@ -314,7 +315,6 @@ app.post('/api/chat', async (req, res) => {
         reply = "Current telemetry shows safe crowd levels across all zones. You can navigate the venue freely and comfortably!";
       }
     }
-    // 3. General Knowledge / Fallback
     else {
       try {
         const words = msgLower.split(' ').filter(w => w.length > 3);
@@ -334,12 +334,12 @@ app.post('/api/chat', async (req, res) => {
 
     res.json({ reply });
   } catch (err) {
-    res.status(500).json({ error: 'Concierge is processing a large amount of data. Please try again.' });
+    res.status(500).json({ error: 'Concierge is processing data.' });
   }
 });
 
 // --- EXPENSES API ---
-app.get('/api/expenses', async (req, res) => {
+apiRouter.get('/expenses', async (req, res) => {
   const { eventId } = req.query;
   try {
     const history = await db.all('SELECT item_name, category, AVG(price) as avg_price, MIN(price) as min_price, MAX(price) as max_price FROM sales_history GROUP BY item_name');
@@ -348,9 +348,9 @@ app.get('/api/expenses', async (req, res) => {
     if (eventId) {
       const event = await db.get('SELECT type FROM events WHERE id = ?', [eventId]);
       if (event) {
-        if (event.type === 'Festival') multiplier = 1.25; // 25% markup for festivals
-        else if (event.type === 'Sports') multiplier = 1.15; // 15% markup for sports
-        else if (event.type === 'Speech') multiplier = 0.90; // 10% discount for educational
+        if (event.type === 'Festival') multiplier = 1.25;
+        else if (event.type === 'Sports') multiplier = 1.15;
+        else if (event.type === 'Speech') multiplier = 0.90;
       }
     }
 
@@ -377,7 +377,7 @@ app.get('/api/expenses', async (req, res) => {
 });
 
 // --- PROFILE API ---
-app.get('/api/profile', async (req, res) => {
+apiRouter.get('/profile', async (req, res) => {
   try {
     const user = await db.get('SELECT id, name, email FROM users LIMIT 1');
     res.json(user);
@@ -386,8 +386,8 @@ app.get('/api/profile', async (req, res) => {
   }
 });
 
-app.put('/api/profile', async (req, res) => {
-  const { name, email, phone } = req.body;
+apiRouter.put('/profile', async (req, res) => {
+  const { name, email } = req.body;
   try {
     await db.run('UPDATE users SET name = ?, email = ? WHERE id = (SELECT id FROM users LIMIT 1)', [name, email]);
     res.json({ message: 'Profile updated successfully' });
@@ -396,7 +396,7 @@ app.put('/api/profile', async (req, res) => {
   }
 });
 
-app.put('/api/profile/password', async (req, res) => {
+apiRouter.put('/profile/password', async (req, res) => {
   const { newPassword } = req.body;
   try {
     await db.run('UPDATE users SET password = ? WHERE id = (SELECT id FROM users LIMIT 1)', [newPassword]);
@@ -406,7 +406,7 @@ app.put('/api/profile/password', async (req, res) => {
   }
 });
 
-app.put('/api/profile/avatar', async (req, res) => {
+apiRouter.put('/profile/avatar', async (req, res) => {
   const { avatar } = req.body;
   try {
     await db.run('UPDATE users SET avatar = ? WHERE id = (SELECT id FROM users LIMIT 1)', [avatar]);
@@ -416,8 +416,8 @@ app.put('/api/profile/avatar', async (req, res) => {
   }
 });
 
-// --- WEATHER API (Secure Free Resource: Open-Meteo) ---
-app.get('/api/weather', async (req, res) => {
+// --- WEATHER API ---
+apiRouter.get('/weather', async (req, res) => {
   const { lat, lng } = req.query;
   if (!lat || !lng) return res.status(400).json({ error: 'Lat and Lng required' });
   
@@ -430,7 +430,7 @@ app.get('/api/weather', async (req, res) => {
 });
 
 // --- EVENTS API ---
-app.get('/api/events', async (req, res) => {
+apiRouter.get('/events', async (req, res) => {
   const { location } = req.query;
   try {
     let query = 'SELECT * FROM events_v2 WHERE date >= date(\'now\')';
@@ -440,25 +440,14 @@ app.get('/api/events', async (req, res) => {
       params.push(`%${location}%`);
     }
     const events = await db.all(query, params);
-    console.log(`API FETCH: Found ${events.length} events for location: ${location || 'ALL'}`);
     res.json(events);
   } catch (err) {
-    console.error("API ERROR /api/events:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-app.post('/api/alerts', async (req, res) => {
-  const { title, message, type, location } = req.body;
-  if (!title || !message || !type || !location) return res.status(400).json({ error: 'Missing fields' });
-  try {
-    const result = await db.run('INSERT INTO alerts (title, message, type, location) VALUES (?, ?, ?, ?)', [title, message, type, location]);
-    const newAlert = await db.get('SELECT * FROM alerts WHERE id = ?', result.lastID);
-    res.status(201).json(newAlert);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// Mount the API router
+app.use('/api', apiRouter);
 
 // Catch-all route to serve the React app
 app.get('*', (req, res) => {

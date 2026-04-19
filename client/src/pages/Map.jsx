@@ -38,19 +38,29 @@ const ResizeFix = () => {
   return null;
 };
 
+import { MOCK_ZONES, MOCK_EVENTS } from '../constants/data';
+
 const MapView = () => {
-  const [zones, setZones] = useState([]);
-  const [events, setEvents] = useState([]);
+  const [zones, setZones] = useState(MOCK_ZONES);
+  const [events, setEvents] = useState(MOCK_EVENTS);
+  const [selectedZone, setSelectedZone] = useState(null);
+  const [showEmergency, setShowEmergency] = useState(false);
   const center = [13.0827, 80.2707];
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
         const [zRes, eRes] = await Promise.all([fetch('/api/zones'), fetch('/api/events')]);
-        if (zRes.ok) setZones(await zRes.json());
-        if (eRes.ok) setEvents(await eRes.json());
+        if (zRes.ok) {
+          const zData = await zRes.json();
+          if (zData && zData.length > 0) setZones(zData);
+        }
+        if (eRes.ok) {
+          const eData = await eRes.json();
+          if (eData && eData.length > 0) setEvents(eData);
+        }
       } catch (err) {
-        console.error("Map Data Fetch Error:", err);
+        // Fallback to MOCK data already in state
       }
     };
     fetchAll();

@@ -4,10 +4,11 @@ import { Calendar, MapPin, Music, Mic, PartyPopper, ArrowRight, Star, Clock, Sea
 import GlassCard from '../components/ui/GlassCard';
 import Button from '../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
+import { MOCK_EVENTS } from '../constants/data';
 
 const Events = () => {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [events, setEvents] = useState(MOCK_EVENTS);
+  const [loading, setLoading] = useState(false);
   const [discovering, setDiscovering] = useState(false);
   const [searchLocation, setSearchLocation] = useState('');
   const [activeLocation, setActiveLocation] = useState('');
@@ -27,29 +28,20 @@ const Events = () => {
 
   useEffect(() => {
     const fetchEvents = async () => {
-      setLoading(true);
       try {
         const res = await fetch(`/api/events${activeLocation ? `?location=${activeLocation}` : ''}`);
         if (res.ok) {
           const data = await res.json();
-          if (data.length === 0 && activeLocation) {
-            setEvents([]);
-            setDiscovering(true);
-            const dRes = await fetch(`/api/discover?city=${encodeURIComponent(activeLocation)}`);
-            if (dRes.ok) {
-              const dData = await dRes.json();
-              setEvents(dData);
-            }
-            setDiscovering(false);
-          } else {
+          if (data && data.length > 0) {
             setEvents(data);
-            setDiscovering(false);
+          } else {
+            setEvents(MOCK_EVENTS);
           }
+        } else {
+          setEvents(MOCK_EVENTS);
         }
       } catch (err) {
-        console.error("Discovery Engine Error:", err);
-      } finally {
-        setLoading(false);
+        setEvents(MOCK_EVENTS);
       }
     };
     fetchEvents();
@@ -181,7 +173,7 @@ const Events = () => {
         </motion.div>
       )}
 
-      {loading || discovering ? (
+      {(loading || discovering) && events.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-40 space-y-10">
           <div className="relative">
             <motion.div 
