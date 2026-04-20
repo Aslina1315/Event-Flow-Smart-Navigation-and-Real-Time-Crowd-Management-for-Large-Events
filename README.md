@@ -1,12 +1,9 @@
 # 🚀 EventFlow – Smart Crowd Management & Event Planning System
 
----
 
 ## 🌍 Vertical
 
 **Smart Cities & Public Safety**
-
----
 
 ## 🎯 Problem Statement
 
@@ -19,7 +16,6 @@ Managing large crowds during events such as concerts, sports matches, and public
 
 These issues can affect both **user experience and public safety**.
 
----
 
 ## 💡 Solution Overview
 
@@ -32,19 +28,15 @@ It provides:
 - Alert-based awareness system  
 - A structured foundation for smart event planning  
 
----
-
 ## ✨ Key Features
 
 > The current version is a **frontend-focused functional prototype with simulated logic**, designed to demonstrate how a real system would behave.
 
----
 
 ### 📊 Interactive Dashboard
 - Displays crowd conditions and system overview  
 - Provides quick insights into event status  
 
----
 
 ### 🗺️ Map-Based Visualization
 - Integrated with OpenStreetMap  
