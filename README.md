@@ -1,6 +1,5 @@
 # 🚀 EventFlow – Smart Crowd Management & Event Planning System
 
-
 ## 🌍 Vertical
 
 **Smart Cities & Public Safety**
